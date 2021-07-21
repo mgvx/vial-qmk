@@ -28,10 +28,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define MATRIX_ROWS 10
 #define MATRIX_COLS 8
 
-#define MATRIX_COL_PINS { E6, B4, B5, B7, D5, C7, F1, F0 }
-#define MATRIX_COL_PINS_RIGHT { C7, F1, F0, B6, B2, B3, D5, B7 }
-#define MATRIX_ROW_PINS { F7, D0, D4, C6, D7 }
-#define MATRIX_ROW_PINS_RIGHT { F4, F5, F6, F7, B1 }
+#define MATRIX_COL_PINS { B2, B6, F0, C6, D4, D0, E6, D7 }
+#define MATRIX_COL_PINS_RIGHT { F4, F5, F7, F0, F1, C7, B7, D5 }
+#define MATRIX_ROW_PINS { F1, C7, D5, B7, B5 }
+#define MATRIX_ROW_PINS_RIGHT { D0, D4, C6, D7, E6 }
 
 #define SOFT_SERIAL_PIN D1
 #define DIODE_DIRECTION ROW2COL
