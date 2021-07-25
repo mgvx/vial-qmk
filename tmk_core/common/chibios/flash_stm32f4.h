@@ -24,8 +24,7 @@ extern "C" {
 
 #include "flash_stm32_common.h"
 
-FLASH_Status FLASH_ErasePage(uint32_t Page_Address);
-FLASH_Status FLASH_ProgramHalfWord(uint32_t Address, uint16_t Data);
+FLASH_Status FLASH_EraseSector(uint16_t Sector_Address);
 
 #ifdef __cplusplus
 }

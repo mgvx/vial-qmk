@@ -44,14 +44,19 @@ void EEPROM_Init(void) {
     }
 
     empty_slot = addr;
+    FLASH_Init();
 }
 
 /* Clear flash contents (doesn't touch in-memory DataBuf) */
 static void eeprom_clear(void) {
     FLASH_Unlock();
 
+#ifdef FEE_ERASE_SECTOR
+    FLASH_EraseSector(FEE_ERASE_SECTOR);
+#else
     for (uint32_t page_num = 0; page_num < FEE_DENSITY_PAGES; ++page_num)
         FLASH_ErasePage(FEE_PAGE_BASE_ADDRESS + (page_num * FEE_PAGE_SIZE));
+#endif
 
     FLASH_Lock();
 
@@ -95,12 +100,7 @@ static void eeprom_writedatabyte(uint16_t Address, uint8_t DataByte) {
 
     /* ok we found a place let's write our data */
     FLASH_Unlock();
-
-    /* address */
-    FLASH_ProgramHalfWord((uint32_t)empty_slot, Address);
-    /* value */
-    FLASH_ProgramHalfWord((uint32_t)empty_slot + 2, DataByte | 0xFF00);
-
+    FLASH_ProgramFullWord((uint32_t)empty_slot, (((uint32_t)(DataByte | 0xFF00)) << 16) + Address);
     FLASH_Lock();
 
     empty_slot += 4;
