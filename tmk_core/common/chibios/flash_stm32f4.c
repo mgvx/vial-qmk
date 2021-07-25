@@ -16,52 +16,50 @@
  * Modifications for QMK and STM32F303 by Yiancar
  */
 
-#if defined(EEPROM_EMU_STM32F303xC)
-#    define STM32F303xC
-#    include "stm32f3xx.h"
-#elif defined(EEPROM_EMU_STM32F103xB)
-#    define STM32F103xB
-#    include "stm32f1xx.h"
-#elif defined(EEPROM_EMU_STM32F072xB)
-#    define STM32F072xB
-#    include "stm32f0xx.h"
-#elif defined(EEPROM_EMU_STM32F042x6)
-#    define STM32F042x6
-#    include "stm32f0xx.h"
+#if defined(EEPROM_EMU_STM32F411xE)
+#    define STM32F411xE
+#    include "stm32f4xx.h"
 #else
 #    error "not implemented."
 #endif
 
-#include "flash_stm32.h"
+#include "flash_stm32f4.h"
 
-#if defined(EEPROM_EMU_STM32F103xB)
-#    define FLASH_SR_WRPERR FLASH_SR_WRPRTERR
+#if defined(EEPROM_EMU_STM32F411xE)
+#    define FLASH_SR_PGERR  (FLASH_SR_PGAERR | FLASH_SR_PGPERR | FLASH_SR_PGSERR)
+#endif
+
+#if STM32_FLASH_PSIZE != 2
+#error This code only supports writing 32 bits at a time, try running your MCU at higher voltage?
 #endif
 
 /**
- * @brief  Erases a specified FLASH page.
- * @param  Page_Address: The page address to be erased.
+ * @brief  Erases a specified FLASH sector.
+ * @param  Sector_Number: The sector number to be erased (0-7).
  * @retval FLASH Status: The returned value can be: FLASH_BUSY, FLASH_ERROR_PG,
  *   FLASH_ERROR_WRP, FLASH_COMPLETE or FLASH_TIMEOUT.
  */
-FLASH_Status FLASH_ErasePage(uint32_t Page_Address) {
+FLASH_Status FLASH_EraseSector(uint16_t Sector_Number) {
     FLASH_Status status = FLASH_COMPLETE;
     /* Check the parameters */
-    ASSERT(IS_FLASH_ADDRESS(Page_Address));
+    ASSERT(IS_SECTOR_NUMBER(Sector_number));
     /* Wait for last operation to be completed */
     status = FLASH_WaitForLastOperation(EraseTimeout);
 
     if (status == FLASH_COMPLETE) {
-        /* if the previous operation is completed, proceed to erase the page */
-        FLASH->CR |= FLASH_CR_PER;
-        FLASH->AR = Page_Address;
+        /* if the previous operation is completed, proceed to erase the sector */
+        FLASH->CR &= ~FLASH_CR_PSIZE_Msk;
+        FLASH->CR |= STM32_FLASH_PSIZE << FLASH_CR_PSIZE_Pos;
+        FLASH->CR |= FLASH_CR_SER;
+        FLASH->CR &= ~FLASH_CR_SNB_Msk;
+        FLASH->CR |= (Sector_Number << FLASH_CR_SNB_Pos);
         FLASH->CR |= FLASH_CR_STRT;
 
         /* Wait for last operation to be completed */
         status = FLASH_WaitForLastOperation(EraseTimeout);
         if (status != FLASH_TIMEOUT) {
-            /* if the erase operation is completed, disable the PER Bit */
-            FLASH->CR &= ~FLASH_CR_PER;
+            /* if the erase operation is completed, disable the SER Bit */
+            FLASH->CR &= ~FLASH_CR_SER;
         }
         FLASH->SR = (FLASH_SR_EOP | FLASH_SR_PGERR | FLASH_SR_WRPERR);
     }
@@ -70,13 +68,13 @@ FLASH_Status FLASH_ErasePage(uint32_t Page_Address) {
 }
 
 /**
- * @brief  Programs a half word at a specified address.
+ * @brief  Programs a full word at a specified address.
  * @param  Address: specifies the address to be programmed.
  * @param  Data: specifies the data to be programmed.
  * @retval FLASH Status: The returned value can be: FLASH_ERROR_PG,
  *   FLASH_ERROR_WRP, FLASH_COMPLETE or FLASH_TIMEOUT.
  */
-FLASH_Status FLASH_ProgramHalfWord(uint32_t Address, uint16_t Data) {
+FLASH_Status FLASH_ProgramFullWord(uint32_t Address, uint32_t Data) {
     FLASH_Status status = FLASH_BAD_ADDRESS;
 
     if (IS_FLASH_ADDRESS(Address)) {
@@ -84,8 +82,10 @@ FLASH_Status FLASH_ProgramHalfWord(uint32_t Address, uint16_t Data) {
         status = FLASH_WaitForLastOperation(ProgramTimeout);
         if (status == FLASH_COMPLETE) {
             /* if the previous operation is completed, proceed to program the new data */
+            FLASH->CR &= ~FLASH_CR_PSIZE_Msk;
+            FLASH->CR |= STM32_FLASH_PSIZE << FLASH_CR_PSIZE_Pos;
             FLASH->CR |= FLASH_CR_PG;
-            *(__IO uint16_t*)Address = Data;
+            *(__IO uint32_t*)Address = Data;
             /* Wait for last operation to be completed */
             status = FLASH_WaitForLastOperation(ProgramTimeout);
             if (status != FLASH_TIMEOUT) {
@@ -98,20 +98,6 @@ FLASH_Status FLASH_ProgramHalfWord(uint32_t Address, uint16_t Data) {
     return status;
 }
 
-/**
- * @brief  Programs a full word at a specified address.
- * @param  Address: specifies the address to be programmed.
- * @param  Data: specifies the data to be programmed.
- * @retval FLASH Status: The returned value can be: FLASH_ERROR_PG,
- *   FLASH_ERROR_WRP, FLASH_COMPLETE or FLASH_TIMEOUT.
- */
-FLASH_Status FLASH_ProgramFullWord(uint32_t Address, uint32_t Data) {
-	FLASH_Status status;
-	status = FLASH_ProgramHalfWord(Address, Data & 0xFF);
-	if (status == FLASH_COMPLETE) {
-		status = FLASH_ProgramHalfWord(Address + 2, Data >> 16);
-	}
-	return status;
+void FLASH_Init(void) {
+    FLASH->SR = (FLASH_SR_EOP | FLASH_SR_PGERR | FLASH_SR_WRPERR);
 }
-
-void FLASH_Init(void) { }
