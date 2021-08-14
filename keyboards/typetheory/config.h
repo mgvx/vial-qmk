@@ -31,7 +31,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define MATRIX_COL_PINS { B0, B1, B10, B5, B4, B3, B7, B6 }
 #define MATRIX_ROW_PINS { A7, A6, A5, A4, A3 }
 
-#define SOFT_SERIAL_PIN B9
+#define SOFT_SERIAL_PIN A2
+#define SERIAL_USART_DRIVER SD2
 #define DIODE_DIRECTION ROW2COL
 
 #define DEBOUNCE 5
