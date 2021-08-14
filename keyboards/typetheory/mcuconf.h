@@ -17,10 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
-#define PAL_USE_CALLBACKS true
-#define PAL_USE_WAIT      true
-#define HAL_USE_SERIAL    true
+#include_next "mcuconf.h"
 
-#define SERIAL_USB_BUFFERS_SIZE 256
-
-#include_next "halconf.h"
+#undef  STM32_SERIAL_USE_USART2
+#define STM32_SERIAL_USE_USART2 TRUE
