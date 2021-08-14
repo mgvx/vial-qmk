@@ -21,17 +21,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define VENDOR_ID       0xFEED
 #define PRODUCT_ID      0x5474
-#define DEVICE_VER      0x0002
+#define DEVICE_VER      0x0005
 #define MANUFACTURER    TypeTheory
 #define PRODUCT         Keyboard
 
 #define MATRIX_ROWS 10
 #define MATRIX_COLS 8
 
-#define MATRIX_COL_PINS { E6, B4, B5, B7, D5, C7, F1, F0 }
-#define MATRIX_COL_PINS_RIGHT { C7, F1, F0, B6, B2, B3, D5, B7 }
-#define MATRIX_ROW_PINS { F7, D0, D4, C6, D7 }
-#define MATRIX_ROW_PINS_RIGHT { F4, F5, F6, F7, B1 }
+#define MATRIX_COL_PINS { C7, D6, B7, F4, F5, F6, F0, F1 }
+#define MATRIX_ROW_PINS { B6, B5, D7, C6, D0 }
 
 #define SOFT_SERIAL_PIN D1
 #define DIODE_DIRECTION ROW2COL

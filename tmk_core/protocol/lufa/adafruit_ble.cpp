@@ -440,9 +440,13 @@ bool adafruit_ble_enable_keyboard(void) {
     // Disable command echo
     static const char kEcho[] PROGMEM = "ATE=0";
     // Make the advertised name match the keyboard
-    static const char kGapDevName[] PROGMEM = "AT+GAPDEVNAME=" STR(PRODUCT);
+    static const char kGapDevName[] PROGMEM = "AT+GAPDEVNAME=" STR(MANUFACTURER) " " STR(PRODUCT);
     // Turn on keyboard support
     static const char kHidEnOn[] PROGMEM = "AT+BLEHIDEN=1";
+    // Turn on battery meter support
+    static const char kBattOn0[] PROGMEM = "AT+GATTCLEAR";
+    static const char kBattOn1[] PROGMEM = "AT+GATTADDSERVICE=UUID=0x180F";
+    static const char kBattOn2[] PROGMEM = "AT+GATTADDCHAR=UUID=0x2A19,PROPERTIES=0x12,MIN_LEN=1,VALUE=50";
 
     // Adjust intervals to improve latency.  This causes the "central"
     // system (computer/tablet) to poll us every 10-30 ms.  We can't
@@ -457,7 +461,7 @@ bool adafruit_ble_enable_keyboard(void) {
     // Turn down the power level a bit
     static const char  kPower[] PROGMEM             = "AT+BLEPOWERLEVEL=-12";
     static PGM_P const configure_commands[] PROGMEM = {
-        kEcho, kGapIntervals, kGapDevName, kHidEnOn, kPower, kATZ,
+        kEcho, kGapIntervals, kGapDevName, kHidEnOn, kBattOn0, kBattOn1, kBattOn2, kPower, kATZ,
     };
 
     uint8_t i;
@@ -501,7 +505,7 @@ static void set_connected(bool connected) {
 }
 
 void adafruit_ble_task(void) {
-    char resbuf[48];
+    char resbuf[48], cmdbuf[48], battery_percentage;
 
     if (!state.configured && !adafruit_ble_enable_keyboard()) {
         return;
@@ -555,7 +559,23 @@ void adafruit_ble_task(void) {
     if (timer_elapsed(state.last_battery_update) > BatteryUpdateInterval && resp_buf.empty()) {
         state.last_battery_update = timer_read();
 
-        state.vbat = analogReadPin(BATTERY_LEVEL_PIN);
+        ATOMIC_BLOCK_FORCEON {
+            setPinInput(BATTERY_LEVEL_PIN);
+            state.vbat = analogReadPin(BATTERY_LEVEL_PIN);
+            setPinInputHigh(BATTERY_LEVEL_PIN);
+        }
+
+        /* battery voltage is [state.vbat * 2 * 3.3 / 1024] volts.
+         * empty battery has 3.2V, full battery has 4.2V, so [vbat] ranges
+         * between roughly 496 and 652. We'll call 500 empty and 650 full. */
+        battery_percentage = (state.vbat - 500) * 2 / 3;
+        if(battery_percentage < 0)
+            battery_percentage = 0;
+        if(battery_percentage > 100)
+            battery_percentage = 100;
+        snprintf(cmdbuf, sizeof(cmdbuf), "AT+GATTCHAR=1,%d", battery_percentage);
+        at_command(cmdbuf, NULL, 0, false);
+        dprintf("vbat=%ld\n", state.vbat);
     }
 #endif
 }
