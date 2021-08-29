@@ -105,8 +105,10 @@ FLASH_Status FLASH_WaitForLastOperation(uint32_t Timeout) {
  */
 void FLASH_Unlock(void) {
     /* Authorize the FPEC Access */
-    FLASH->KEYR = FLASH_KEY1;
-    FLASH->KEYR = FLASH_KEY2;
+    if (FLASH->CR & FLASH_CR_LOCK) {
+        FLASH->KEYR = FLASH_KEY1;
+        FLASH->KEYR = FLASH_KEY2;
+    }
 }
 
 /**

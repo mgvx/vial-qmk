@@ -45,7 +45,7 @@ FLASH_Status FLASH_EraseSector(uint16_t Sector_Number) {
     ASSERT(IS_SECTOR_NUMBER(Sector_number));
     /* Wait for last operation to be completed */
     status = FLASH_WaitForLastOperation(EraseTimeout);
-
+    if (status == FLASH_COMPLETE) {
         /* if the previous operation is completed, proceed to erase the sector */
         FLASH->CR &= ~FLASH_CR_PSIZE_Msk;
         FLASH->CR |= STM32_FLASH_PSIZE << FLASH_CR_PSIZE_Pos;
@@ -60,6 +60,7 @@ FLASH_Status FLASH_EraseSector(uint16_t Sector_Number) {
             FLASH->CR &= ~FLASH_CR_SER;
         }
         FLASH->SR = (FLASH_SR_EOP | FLASH_SR_PGERR | FLASH_SR_WRPERR);
+    }
     /* Return the Erase Status */
     return status;
 }
@@ -77,7 +78,7 @@ FLASH_Status FLASH_ProgramFullWord(uint32_t Address, uint32_t Data) {
     if (IS_FLASH_ADDRESS(Address)) {
         /* Wait for last operation to be completed */
         status = FLASH_WaitForLastOperation(ProgramTimeout);
-
+        if (status == FLASH_COMPLETE) {
             /* if the previous operation is completed, proceed to program the new data */
             FLASH->CR &= ~FLASH_CR_PSIZE_Msk;
             FLASH->CR |= STM32_FLASH_PSIZE << FLASH_CR_PSIZE_Pos;
@@ -90,7 +91,7 @@ FLASH_Status FLASH_ProgramFullWord(uint32_t Address, uint32_t Data) {
                 FLASH->CR &= ~FLASH_CR_PG;
             }
             FLASH->SR = (FLASH_SR_EOP | FLASH_SR_PGERR | FLASH_SR_WRPERR);
-
+        }
     }
     return status;
 }
