@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "split_util.h"
 #include "config.h"
 #include "transport.h"
+#include "timer.h"
 
 #define ERROR_DISCONNECT_COUNT 5
 
@@ -248,31 +249,38 @@ void matrix_init(void) {
     split_post_init();
 }
 
+#define RECONNECT_EVERY_MS 2000
+
 bool matrix_post_scan(void) {
     bool changed = false;
     if (is_keyboard_master()) {
         static uint8_t error_count;
+        static uint32_t last_disconnect = 0;
 
-        matrix_row_t slave_matrix[ROWS_PER_HAND] = {0};
-        if (!transport_master(matrix + thisHand, slave_matrix)) {
-            error_count++;
+        if (!last_disconnect || timer_elapsed32(last_disconnect) > RECONNECT_EVERY_MS) {
+            matrix_row_t slave_matrix[ROWS_PER_HAND] = {0};
+            if (!transport_master(matrix + thisHand, slave_matrix)) {
+                error_count++;
 
-            if (error_count > ERROR_DISCONNECT_COUNT) {
-                // reset other half if disconnected
-                for (int i = 0; i < ROWS_PER_HAND; ++i) {
-                    matrix[thatHand + i] = 0;
-                    slave_matrix[i]      = 0;
+                if (error_count > ERROR_DISCONNECT_COUNT) {
+                    last_disconnect = timer_read32();
+                    // reset other half if disconnected
+                    for (int i = 0; i < ROWS_PER_HAND; ++i) {
+                        matrix[thatHand + i] = 0;
+                        slave_matrix[i]      = 0;
+                    }
+
+                    changed = true;
                 }
+            } else {
+                error_count = 0;
+                last_disconnect = 0;
 
-                changed = true;
-            }
-        } else {
-            error_count = 0;
-
-            for (int i = 0; i < ROWS_PER_HAND; ++i) {
-                if (matrix[thatHand + i] != slave_matrix[i]) {
-                    matrix[thatHand + i] = slave_matrix[i];
-                    changed              = true;
+                for (int i = 0; i < ROWS_PER_HAND; ++i) {
+                    if (matrix[thatHand + i] != slave_matrix[i]) {
+                        matrix[thatHand + i] = slave_matrix[i];
+                        changed              = true;
+                    }
                 }
             }
         }
