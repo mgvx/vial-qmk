@@ -31,7 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define MATRIX_COL_PINS { B3, B4, B5, B8, B7, B6, C14, C15 }
 #define MATRIX_ROW_PINS { A7, A6, A5, A4, A3 }
 #define MATRIX_COL_PINS_RIGHT { B3, B4, B5, B8, B7, B6, C14, C15 }
-#define MATRIX_ROW_PINS_RIGHT { A7, A5, A6, A3, A4 }
+#define MATRIX_ROW_PINS_RIGHT { A7, A6, A5, A4, A3 }
 
 #define SOFT_SERIAL_PIN A2
 #define SERIAL_USART_DRIVER SD2
